@@ -3,6 +3,7 @@ import {
   type ErrorInfo,
   type ReactNode,
   useEffect,
+  useMemo,
   useState,
 } from "react";
 import {
@@ -41,6 +42,7 @@ import {
   Settings,
 } from "./components/Panels";
 import { sound } from "./utils/audio";
+import { presentation } from "./game/Art";
 class GraphicsBoundary extends Component<
   { children: ReactNode },
   { failed: boolean }
@@ -67,8 +69,11 @@ class GraphicsBoundary extends Component<
   }
 }
 function HUD() {
-  const { run: r, setMode } = useGame();
-  const m = metrics(useGame((s) => s.mail));
+  const [r, setRun] = useState(useGame.getState().run);
+  useEffect(() => { const timer = window.setInterval(() => setRun(useGame.getState().run), 100); return () => clearInterval(timer); }, []);
+  const setMode = useGame(s => s.setMode);
+  const mail = useGame(s => s.mail);
+  const m = useMemo(() => metrics(mail), [mail]);
   const p = pickupDefs.find(
     (p) =>
       !r.collected.includes(p.id) &&
@@ -130,7 +135,9 @@ function HUD() {
             <Skull size={16} />
             <span>{bossConfigs[boss.boss].name}</span>
             <small>
-              {boss.windup > 0
+              {boss.special && (boss.specialUntil ?? 0) > r.time
+                ? boss.special === "charge" ? "CHARGE — STEP ASIDE" : boss.special === "slam" ? "SHOCKWAVE — LEAVE THE RING" : "THE HOARDER IS CALLING"
+                : boss.stun > 0.5 ? "RECOVERING — TAKE YOUR SHOT" : boss.windup > 0
                 ? "ATTACK INCOMING — MOVE BACK"
                 : `${boss.hp} / ${boss.maxHp}`}
             </small>
@@ -140,7 +147,7 @@ function HUD() {
           </div>
         </div>
       ) : null}
-      <div className={`crosshair ${r.time - r.hitAt < 0.15 ? "hit" : ""}`}>
+      <div style={{opacity: presentation.aiming ? 1 : 0.3, transform: `translate(-50%, -50%) scale(${presentation.aiming ? Math.hypot(...(r.velocity ?? [0, 0])) > 0.3 ? 1.2 : 0.75 : 0.5})`}} className={`crosshair ${r.time - r.hitAt < 0.2 ? "hit" : ""}`}>
         <span />
         <i />
       </div>

@@ -8,12 +8,12 @@ export interface Solid {
   kind?: string;
 }
 export const rooms = [
-  { name: "Entrance Hall", x: 4, z: 4.5 },
+  { name: "Reception Hall", x: 4, z: 4.5 },
   { name: "Living Room", x: 12, z: 4.5 },
   { name: "Study Room", x: 20, z: 4.5 },
-  { name: "Bedroom", x: 4, z: 13.5 },
+  { name: "Academic Records", x: 4, z: 13.5 },
   { name: "Storage Room", x: 12, z: 13.5 },
-  { name: "Final Boss Room", x: 20, z: 13.5 },
+  { name: "Server Chamber", x: 20, z: 13.5 },
 ];
 export const walls: Solid[] = [
   { x: 12, z: 0, w: 24, d: 0.25, h: 3.5 },
@@ -30,6 +30,7 @@ export const walls: Solid[] = [
   { x: 15, z: 9, w: 18, d: 0.25, h: 3.5 },
 ];
 export const furniture: Solid[] = [
+  { x: 4, z: 7.6, w: 4.3, d: 0.85, h: 1.4, kind: "reception" },
   { x: 5, z: 1.4, w: 2.6, d: 0.8, h: 1, kind: "desk" },
   { x: 5, z: 0.55, w: 0.65, d: 0.6, h: 1, kind: "chair" },
   { x: 6.9, z: 7.5, w: 0.45, d: 0.45, h: 0.9, kind: "plant" },
@@ -87,8 +88,12 @@ export const doors = [
     label: "Final chamber: first 3 bosses",
   },
 ] as const;
+const solidCache = new Map<string, Solid[]>();
 export function obstacles(keys: string[]): Solid[] {
-  return [
+  const key = doors.map(d => !d.requires || keys.includes(d.requires) ? "1" : "0").join("");
+  const cached = solidCache.get(key);
+  if (cached) return cached;
+  const result = [
     ...walls,
     ...furniture,
     ...doors
@@ -101,13 +106,15 @@ export function obstacles(keys: string[]): Solid[] {
         h: 3.5,
       })),
   ];
+  solidCache.set(key, result);
+  return result;
 }
 export function blocked(x: number, z: number, solids: Solid[], radius = 0.3) {
-  return solids.some(
-    (s) =>
-      Math.abs(x - s.x) < s.w / 2 + radius &&
-      Math.abs(z - s.z) < s.d / 2 + radius,
-  );
+  return solids.some((s) => {
+    const dx = Math.max(0, Math.abs(x - s.x) - s.w / 2);
+    const dz = Math.max(0, Math.abs(z - s.z) - s.d / 2);
+    return radius === 0 ? dx === 0 && dz === 0 : dx * dx + dz * dz < radius * radius;
+  });
 }
 /** Keep older saves usable when a furniture upgrade occupies their saved position. */
 export function safePosition(position: Vec2, solids: Solid[]): Vec2 {
@@ -131,23 +138,32 @@ export function move(
   radius = 0.3,
 ): Vec2 {
   let [x, z] = pos;
-  if (!blocked(x + dx, z, solids, radius)) x += dx;
-  if (!blocked(x, z + dz, solids, radius)) z += dz;
+  // Sweep in short increments so fast boss charges cannot tunnel through thin walls.
+  const steps = Math.max(1, Math.ceil(Math.hypot(dx, dz) / 0.12));
+  for (let i = 0; i < steps; i++) {
+    if (!blocked(x + dx / steps, z, solids, radius)) x += dx / steps;
+    if (!blocked(x, z + dz / steps, solids, radius)) z += dz / steps;
+  }
   return [x, z];
 }
 export function clearLine(a: Vec2, b: Vec2, solids: Solid[]) {
-  const dist = Math.hypot(a[0] - b[0], a[1] - b[1]);
-  const steps = Math.max(1, Math.ceil(dist / 0.12));
-  for (let i = 1; i < steps; i++)
-    if (
-      blocked(
-        a[0] + ((b[0] - a[0]) * i) / steps,
-        a[1] + ((b[1] - a[1]) * i) / steps,
-        solids,
-        0,
-      )
-    )
-      return false;
+  // Exact segment/AABB slabs: independent of distance and no missed thin doors.
+  for (const s of solids) {
+    let near = 0.001, far = 0.999;
+    for (const [origin, delta, min, max] of [
+      [a[0], b[0] - a[0], s.x - s.w / 2, s.x + s.w / 2],
+      [a[1], b[1] - a[1], s.z - s.d / 2, s.z + s.d / 2],
+    ]) {
+      if (Math.abs(delta) < 1e-8) {
+        if (origin < min || origin > max) { near = 1; far = 0; break; }
+      } else {
+        const t1 = (min - origin) / delta, t2 = (max - origin) / delta;
+        near = Math.max(near, Math.min(t1, t2));
+        far = Math.min(far, Math.max(t1, t2));
+      }
+    }
+    if (near <= far) return false;
+  }
   return true;
 }
 export function roomAt(p: Vec2) {

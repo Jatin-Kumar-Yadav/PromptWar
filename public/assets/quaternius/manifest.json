@@ -282,6 +282,30 @@
       "sha256": "530d5abfe1b663cb1d5cb6f82b7d103c9bedf5cf1400621f4f02d342fde642e7",
       "bytes": 8036,
       "clips": []
+    },
+    {
+      "name": "archive-zombie",
+      "author": "Quaternius",
+      "license": "CC0-1.0",
+      "source": "https://quaternius.com/packs/animatedzombie.html",
+      "sources": {
+        "archive-zombie.blend": "1C7N1EADKkEpSQVpY9QFesECHkU71Qnkp",
+        "ZombieTexture.png": "1NSJdgIIwWOXsrUzCz_c_QR05cI9y3W9H"
+      },
+      "sha256": "841bd41d87808865e91f1229b6deee6168330837f52ec78b3e09761eae7fdbdb",
+      "bytes": 662300,
+      "clips": [
+        "Idle",
+        "Idle_Attack",
+        "Run",
+        "Walk",
+        "ZombieBite",
+        "ZombieCrawl"
+      ],
+      "sourceHashes": {
+        "archive-zombie.blend": "5d3725b335efe60cd2f7109de75c2d264f6586a46b687534a5ce73775fbc3dd4",
+        "ZombieTexture.png": "43e4bb1aea01e85dddc02000094c07250fbb07ffcb796aa18805cfb5d368e801"
+      }
     }
   ]
 }

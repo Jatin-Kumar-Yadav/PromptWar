@@ -1,9 +1,11 @@
 import { useEffect, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useGame, enemyActive } from "../store/game";
+import { presentation } from "./Art";
 /** F3 developer overlay; DOM text updates twice a second without React frame renders. */
 export function PerformanceProbe() {
-  const { gl } = useThree();
+  const { gl, setDpr } = useThree();
+  const budget = useRef({time: 0, frames: 0, ratio: 1, quality: ""});
   const output = useRef<HTMLOutputElement | null>(null),
     elapsed = useRef(0),
     frames = useRef(0);
@@ -39,6 +41,16 @@ export function PerformanceProbe() {
     };
   }, []);
   useFrame((_, dt) => {
+    const b = budget.current;
+    const ceiling = presentation.quality === "low" ? 0.75 : presentation.quality === "high" ? 1.25 : 1;
+    if (b.quality !== presentation.quality) { b.quality = presentation.quality; b.ratio = ceiling; b.time = b.frames = 0; }
+    b.time += dt; b.frames++;
+    if (b.time > 3) {
+      const fps = b.frames / b.time;
+      const ratio = Math.max(0.55, Math.min(ceiling, b.ratio + (fps < 35 ? -0.1 : fps > 57 ? 0.05 : 0)));
+      if (ratio !== b.ratio) { setDpr(ratio); b.ratio = ratio; }
+      b.time = b.frames = 0;
+    }
     elapsed.current += dt;
     frames.current++;
     if (elapsed.current < 0.5) return;

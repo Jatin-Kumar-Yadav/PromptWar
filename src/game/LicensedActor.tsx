@@ -5,21 +5,29 @@ import { clone } from "three/addons/utils/SkeletonUtils.js";
 import * as T from "three";
 import { useGame } from "../store/game";
 import { presentation } from "./Art";
+import { archiveMaterial } from "./materials";
+export const actorTargets = new Map<string, { head: T.Vector3; body: T.Vector3 }>();
 /** Each actor owns its skeleton/mixer; geometry, atlas textures and materials are shared. */
 export function LicensedActor({ id }: { id?: string }) {
   const e0 = useGame.getState().run.enemies.find((e) => e.id === id);
-  const variants = ["zombie", "zombie-arm", "zombie-rib"];
+  const variants = ["archive-zombie", "archive-zombie", "zombie-rib"];
   const name = !id
     ? "survivor"
     : e0!.boss >= 0
       ? ["security", "zombie-arm", "zombie-heavy", "zombie-rib"][e0!.boss]
       : variants[Number(id.split("-")[1]) % 3];
   const gltf = useGLTF(`/assets/quaternius/${name}.glb`);
+  const targets = useMemo(() => ({head: new T.Vector3(), body: new T.Vector3()}), []);
+  useEffect(() => { if (id) actorTargets.set(id, targets); return () => { if (id) actorTargets.delete(id); }; }, [id, targets]);
   const pistol = useGLTF("/assets/quaternius/pistol.glb");
   const model = useMemo(() => {
     const m = clone(gltf.scene);
     m.traverse((o) => {
       if (["Knife", "WoodenBat_Saw"].includes(o.name)) o.visible = false;
+      if (o instanceof T.Mesh) {
+        o.castShadow = true; o.receiveShadow = true;
+        o.material = Array.isArray(o.material) ? o.material.map(mat => archiveMaterial(mat, true, !id)) : archiveMaterial(o.material, true, !id);
+      }
     });
     return m;
   }, [gltf.scene]);
@@ -84,10 +92,12 @@ export function LicensedActor({ id }: { id?: string }) {
       speed,
       1 - Math.exp(-dt * 12),
     );
-    root.current.position.set(x, 0, z);
+    if (root.current.position.lengthSq() === 0 || s.mode !== "playing") root.current.position.set(x, 0, z);
+    else { root.current.position.x = T.MathUtils.damp(root.current.position.x, x, 24, dt); root.current.position.z = T.MathUtils.damp(root.current.position.z, z, 24, dt); }
     const angle = e
       ? Math.atan2(r.position[0] - x, r.position[1] - z)
-      : r.yaw + Math.PI;
+      : !presentation.aiming && Math.hypot(...(r.velocity ?? [0, 0])) > 0.2
+        ? Math.atan2(r.velocity![0], r.velocity![1]) : r.yaw + Math.PI;
     facing.current +=
       Math.atan2(
         Math.sin(angle - facing.current),
@@ -100,9 +110,9 @@ export function LicensedActor({ id }: { id?: string }) {
     mixer.timeScale = running ? 1 : 0;
     let clip = "Idle";
     if (e) {
-      if (e.hp <= 0) clip = "Death";
-      else if (e.stun > 0 && e.stun < 1) clip = "HitReact";
-      else if (e.windup > 0)
+      if (e.hp <= 0) clip = actions.Death ? "Death" : "Idle";
+      else if (e.stun > 0 && e.stun < 1) clip = actions.HitReact ? "HitReact" : "Idle";
+      else if (e.windup > 0 || e.special)
         clip = actions.Idle_Attack ? "Idle_Attack" : "Punch";
       else if (e.state === "chase") clip = "Walk";
     } else {
@@ -124,6 +134,18 @@ export function LicensedActor({ id }: { id?: string }) {
       old?.fadeOut(0.15);
       phase.current = clip;
     }
+    const head = model.getObjectByName("Head");
+    if (head && name !== "archive-zombie") head.scale.setScalar(id ? 0.67 : 0.75);
+    if (name === "archive-zombie" && e) {
+      root.current.rotation.x = e.hp <= 0 ? Math.min(1.5, (r.time - (e.diedAt ?? r.time)) * 2) : e.stun > 0 && e.stun < 1 ? -0.15 : 0;
+      if (e.hp <= 0) mixer.timeScale = 0;
+    }
+    const tongue = model.getObjectByName("Tongue1");
+    if (tongue) tongue.scale.setScalar(0.01);
+    if (actions[clip] && ["Walk", "Walk_Gun", "Run"].includes(clip)) {
+      const locomotion = Math.max(0.35, Math.min(1.7, smoothSpeed.current / (clip === "Run" ? 3.8 : 1.6)));
+      actions[clip]!.setEffectiveTimeScale(locomotion);
+    }
     if (!e) {
       const arm =
         model.getObjectByName("LowerArmR") ??
@@ -137,7 +159,7 @@ export function LicensedActor({ id }: { id?: string }) {
           const bone = model.getObjectByName(n);
           if (!bone?.parent) continue;
           aimScratch.direction
-            .set(n.endsWith("L") ? -0.2 : 0, -0.05, 1)
+            .set(n.endsWith("L") ? -0.2 : 0, -Math.tan(presentation.pitch) + recoil * 0.15, 1)
             .normalize()
             .applyQuaternion(aimScratch.root);
           aimScratch.world.setFromUnitVectors(
@@ -155,9 +177,17 @@ export function LicensedActor({ id }: { id?: string }) {
           weapon.quaternion
             .copy(aimScratch.parent.invert())
             .multiply(aimScratch.root);
+          weapon.rotateX(presentation.pitch - recoil * 0.12);
         }
       } else weapon.rotation.set(Math.PI / 2, 0, Math.PI);
       if (flash.current) flash.current.visible = recoil > 0.35;
+    }
+    if (e) {
+      root.current.updateMatrixWorld(true);
+      (model.getObjectByName("Head") ?? root.current).getWorldPosition(targets.head);
+      targets.head.y += 0.08;
+      (model.getObjectByName("Spine1") ?? model.getObjectByName("Torso") ?? root.current).getWorldPosition(targets.body);
+      targets.body.y -= 0.05;
     }
   });
   const bossScale =

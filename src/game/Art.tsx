@@ -6,8 +6,12 @@ import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import * as T from "three";
 import { useGame } from "../store/game";
 import { pickupDefs, rooms } from "./world";
+import { archiveMaterial } from "./materials";
+import { AmmunitionBox } from "./Supplies";
 export const presentation = {
   aiming: false,
+  pitch: 0,
+  shoulder: 1,
   quality: (() => {
     try {
       const q = localStorage.getItem("dead-inbox-quality");
@@ -38,6 +42,7 @@ export function Batch({ children }: { children: ReactNode }) {
         return;
       const m = o.material;
       const key = [
+        m.customProgramCacheKey(),
         m.color.getHex(),
         m.map?.uuid,
         m.emissive.getHex(),
@@ -60,6 +65,7 @@ export function Batch({ children }: { children: ReactNode }) {
       b.parts.forEach((p) => p.dispose());
       if (!geometry) continue;
       const mesh = new T.Mesh(geometry, b.material);
+      mesh.receiveShadow = true;
       g.add(mesh);
       merged.push(mesh);
       b.originals.forEach((o) => (o.visible = false));
@@ -112,7 +118,11 @@ export function LicensedProp({
     const model = scene.clone(true);
     model.rotation.y = rotation;
     model.traverse((o) => {
-      if (o instanceof T.Mesh) o.userData.solid = true;
+      if (o instanceof T.Mesh) {
+        o.userData.solid = true;
+        o.receiveShadow = true;
+        o.material = Array.isArray(o.material) ? o.material.map(m => archiveMaterial(m)) : archiveMaterial(o.material);
+      }
     });
     model.updateMatrixWorld(true);
     const box = new T.Box3().setFromObject(model),
@@ -267,18 +277,14 @@ export function Actor({ id }: { id?: string }) {
 export function Collectibles() {
   const collected = useGame((s) => s.run.collected);
   return (
-    <>
+    <Batch>
       {pickupDefs
         .filter((p) => !collected.includes(p.id))
         .map((p) => (
-          <Asset
-            key={p.id}
-            name={p.kind === "ammo" ? "ammo" : "herb"}
-            position={[p.x, 0.15, p.z]}
-            scale={1.3}
-          />
+          p.kind === "ammo" ? <AmmunitionBox key={p.id} position={[p.x, 0.02, p.z]} /> :
+          <LicensedProp key={p.id} name="plant" position={[p.x, 0, p.z]} fit={[0.4, 0.62, 0.4]} />
         ))}
-    </>
+    </Batch>
   );
 }
 let maps: Record<string, T.CanvasTexture> | undefined;

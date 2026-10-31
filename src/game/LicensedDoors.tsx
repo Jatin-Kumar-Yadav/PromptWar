@@ -4,13 +4,17 @@ import * as T from "three";
 import { doors } from "./world";
 import { useGame } from "../store/game";
 import { LicensedProp } from "./Art";
+import { sound } from "../utils/audio";
 function Door({ door: d }: { door: (typeof doors)[number] }) {
   const hinge = useRef<T.Group>(null);
+  const wasOpen = useRef(false);
   useFrame((_, dt) => {
     if (!hinge.current) return;
     const r = useGame.getState().run;
     const unlocked = !d.requires || r.keys.includes(d.requires);
     const near = Math.hypot(r.position[0] - d.x, r.position[1] - d.z) < 3;
+    if (unlocked && near !== wasOpen.current && useGame.getState().mode === "playing") sound("door", useGame.getState().volume * 0.45);
+    wasOpen.current = unlocked && near;
     hinge.current.rotation.y = T.MathUtils.damp(
       hinge.current.rotation.y,
       unlocked && near ? -Math.PI / 2 : 0,

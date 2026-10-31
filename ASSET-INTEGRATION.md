@@ -1,5 +1,7 @@
 # Licensed asset integration
 
+This records the earlier asset-integration milestone. See [the subsequent survival pass](SURVIVAL-REBUILD.md) for the additional Animated Zombie Pack, movement/AI changes, drawer trays, supply models and current validation.
+
 This branch replaces the active generated humanoid visuals with externally authored Quaternius models. It is a **stylized animated asset milestone**, not completion of every item in the larger photorealistic rebuild brief.
 
 ## Sources and licenses

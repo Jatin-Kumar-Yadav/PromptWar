@@ -618,10 +618,10 @@ kbd {
   align-items: flex-start;
 }
 .vitals {
-  background: #101c16ad;
+  background: linear-gradient(90deg, #10171390, transparent);
   border-left: 2px solid #a8bd84;
   padding: 15px 18px;
-  width: 175px;
+  width: 145px;
 }
 .hud .eyebrow {
   font-size: 8px;
