@@ -11,6 +11,7 @@ import {
 import { bossConfigs, pickupDefs, type Vec2 } from "../game/world";
 export type Mode = "menu" | "playing" | "paused" | "dead" | "victory";
 export interface Enemy {
+  diedAt?: number;
   id: string;
   x: number;
   z: number;
@@ -394,6 +395,7 @@ export const useGame = create<Store>((set, get) => ({
         ? {
             ...e,
             hp,
+            diedAt: hp===0 ? s.run.time : undefined,
             stun: enemy.boss >= 0 ? (hp % 6 === 0 ? 0.55 : 0.02) : 0.3,
             state: hp === 0 ? ("dead" as const) : ("stunned" as const),
           }

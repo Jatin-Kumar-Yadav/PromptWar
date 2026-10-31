@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { presentation } from "../game/Art";
 import { Download, ShieldCheck } from "lucide-react";
 import { exportJSON, objective, report, useGame } from "../store/game";
 import { metrics } from "../email/engine";
@@ -152,9 +153,31 @@ export function Inventory() {
   );
 }
 export function Settings() {
+  const [quality, setQuality] = useState(presentation.quality);
   const { volume, setVolume } = useGame();
   return (
     <>
+      <label className="setting">
+        Graphics preset{" "}
+        <select
+          aria-label="Graphics preset"
+          value={quality}
+          onChange={(e) => {
+            setQuality(e.target.value);
+            presentation.quality = e.target.value;
+            try {
+              localStorage.setItem("dead-inbox-quality", e.target.value);
+            } catch {}
+            window.dispatchEvent(new Event("graphics-quality"));
+          }}
+        >
+          {["low", "medium", "high"].map((q) => (
+            <option key={q} value={q}>
+              {q.toUpperCase()}
+            </option>
+          ))}
+        </select>
+      </label>
       <label className="setting">
         Sound volume <strong>{Math.round(volume * 100)}%</strong>
         <input
@@ -196,6 +219,7 @@ export function Puzzle({ id, close }: { id: string; close: () => void }) {
     "mail-87",
     "mail-121",
   ];
+  if(id==='note'||id==='digits')return <><p className="eyebrow">RECOVERED DOCUMENT</p><h2>{id==='note'?'Drawer access note':'Indexed safe digits'}</h2><p>{id==='note'?'The drawer combination is 314.':'First digit: 7 · Second digit: 2 · Third digit: 6'}</p><button className="primary" onClick={close}>Put document away</button></>;
   if (id === "exit")
     return (
       <>
