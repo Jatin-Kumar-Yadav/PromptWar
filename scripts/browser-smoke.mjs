@@ -41,9 +41,11 @@ const until = async (code) =>
   );
 const shoot = async () => {
   const mag = await state("return s.run.mag");
+  await page.mouse.down({ button: "right" });
   await page.mouse.down();
   await until(`return s.run.mag<${mag}`);
   await page.mouse.up();
+  await page.mouse.up({ button: "right" });
   const time = await state("return s.run.time");
   if (await state("return s.mode==='playing'"))
     await until(`return s.mode!=='playing'||s.run.time>${time + 0.28}`);
