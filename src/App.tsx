@@ -174,7 +174,11 @@ function HUD() {
           <small>
             {r.reload > 0
               ? `RELOADING ${r.reload.toFixed(1)}s`
-              : "12 ROUND MAGAZINE · R RELOAD"}
+              : r.mag === 0
+                ? r.reserve > 0
+                  ? "EMPTY · PRESS R TO RELOAD"
+                  : "NO AMMO"
+                : "12 ROUND MAGAZINE · R RELOAD"}
           </small>
         </div>
       </div>

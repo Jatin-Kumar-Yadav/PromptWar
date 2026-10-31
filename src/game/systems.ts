@@ -10,6 +10,7 @@ export interface TickInput {
   forward: number;
   strafe: number;
   sprint: boolean;
+  aiming?: boolean;
   yaw: number;
 }
 /** Fixed-step gameplay clock. All timers advance only while the caller is playing. */
@@ -21,7 +22,7 @@ export function advanceRun(
 ) {
   let [x, z] = r.position;
   const speed =
-    (input.sprint ? 4 : 2.5) *
+    (input.sprint ? 4 : 2.5) * (input.aiming ? 0.62 : 1) *
     (1 + Math.min(0.08, Math.floor(r.xp / 150) * 0.008));
   const length = Math.hypot(input.strafe, input.forward) || 1;
   const dx = input.strafe / length,
