@@ -22,9 +22,13 @@ import {
 } from "./world";
 import { sound } from "../utils/audio";
 import { advanceRun } from "./systems";
-import { LicensedActor } from "./LicensedActor";
+import { LicensedActor, actorTargets } from "./LicensedActor";
 import { PerformanceProbe } from "./PerformanceProbe";
 import { LicensedDoors } from "./LicensedDoors";
+import { useShallow } from "zustand/react/shallow";
+import { ArchiveDetails } from "./ArchiveDetails";
+import { CombatEffects, impact } from "./CombatEffects";
+import { InteractiveDrawers } from "./InteractiveDrawers";
 import {
   Actor,
   Asset,
@@ -68,6 +72,7 @@ function House() {
   return (
     <Batch>
       <Mansion />
+      <ArchiveDetails />
       {rooms.map((r, i) => (
         <group key={r.name}>
           <Box
@@ -84,19 +89,19 @@ function House() {
               ][i]
             }
           />
-          <Text
+          {false && <Text
             position={[r.x, 0.015, r.z + 3.6]}
             rotation={[-Math.PI / 2, 0, 0]}
             fontSize={0.22}
             color="#a8a58b"
           >
             {r.name.toUpperCase()}
-          </Text>
+          </Text>}
           {i % 2 === 0 ? (
             <pointLight
               position={[r.x, 2.9, r.z]}
-              color="#b3c4c0"
-              intensity={8}
+              color="#ffd1a0"
+              intensity={18}
               distance={10}
               decay={2}
             />
@@ -141,6 +146,7 @@ function House() {
         </group>
       ))}
       {furniture.map((f, i) =>
+        f.kind === "reception" ? null :
         ["desk", "shelf", "bed", "terminal", "chair", "plant"].includes(
           f.kind ?? "",
         ) ? (
@@ -232,7 +238,7 @@ function House() {
               size={d.axis === "z" ? [0.32, 0.6, 2.5] : [2.5, 0.6, 0.32]}
               color="#302f27"
             />
-            <Text
+            {false && <Text
               position={[
                 d.x + (d.axis === "z" ? -0.2 : 0),
                 2.6,
@@ -244,7 +250,7 @@ function House() {
               color={locked ? "#edb478" : "#b8cfaa"}
             >
               {locked ? "LOCKED" : "OPEN"}
-            </Text>
+            </Text>}
           </group>
         );
       })}
@@ -292,16 +298,28 @@ function House() {
   );
 }
 function Creature({ enemy: e }: { enemy: Enemy }) {
-  const scale = e.boss >= 0 ? [1.65, 1.8, 1.65, 1.85][e.boss] : 1;
+  const scale = e.boss >= 0 ? [1.4, 1.6, 1.5, 1.8][e.boss] : 1;
+  const hitboxes = useRef<THREE.Group>(null);
+  const headBox = useRef<THREE.Mesh>(null), bodyBox = useRef<THREE.Mesh>(null);
+  useFrame(() => {
+    const current = useGame.getState().run.enemies.find(n => n.id === e.id);
+    if (current && hitboxes.current) hitboxes.current.position.set(current.x, 0, current.z);
+    const bones = actorTargets.get(e.id);
+    if (current && bones && headBox.current && bodyBox.current) {
+      headBox.current.position.set((bones.head.x - current.x) / scale, bones.head.y / scale, (bones.head.z - current.z) / scale);
+      bodyBox.current.position.set((bones.body.x - current.x) / scale, bones.body.y / scale, (bones.body.z - current.z) / scale);
+    }
+  });
   return (
     <>
       <LicensedActor id={e.id} />
-      <group position={[e.x, 0, e.z]} scale={scale}>
-        <mesh position={[0, 1, 0]} userData={{ enemyId: e.id, part: "body" }}>
+      <group ref={hitboxes} position={[e.x, 0, e.z]} scale={scale}>
+        <mesh ref={bodyBox} position={[0, 1, 0]} userData={{ enemyId: e.id, part: "body" }}>
           <boxGeometry args={[0.55, 0.8, 0.4]} />
           <meshBasicMaterial transparent opacity={0} depthWrite={false} />
         </mesh>
         <mesh
+          ref={headBox}
           position={[0, 1.65, 0]}
           userData={{ enemyId: e.id, part: "head" }}
         >
@@ -322,7 +340,10 @@ function Controller() {
   const { camera, scene, gl } = useThree();
   const input = useRef(new Set<string>());
   const yaw = useRef(useGame.getState().run.yaw);
-  const pitch = useRef(0.08);
+  const pitch = useRef(0.02);
+  const smoothAim = useRef(0);
+  const ambience = useRef(0);
+  const footsteps = useRef(0);
   const firing = useRef(false);
   const aiming = useRef(false);
   const fireTimer = useRef(0);
@@ -373,6 +394,7 @@ function Controller() {
         s.setMode("paused");
         document.exitPointerLock?.();
       }
+      if (e.code === "KeyQ") presentation.shoulder *= -1;
       if (e.code === "Tab" || e.code === "KeyM") {
         s.setPanel(e.code === "Tab" ? "inventory" : "map");
         document.exitPointerLock?.();
@@ -538,18 +560,20 @@ function Controller() {
     const occluders = occludersRef.current;
     const shotTargets = shotTargetsRef.current;
     const target = vectors.current[0].set(r.position[0], 1.45, r.position[1]);
+    presentation.pitch = pitch.current;
     const forward = vectors.current[1].set(
       -Math.sin(yaw.current) * Math.cos(pitch.current),
       -Math.sin(pitch.current),
       -Math.cos(yaw.current) * Math.cos(pitch.current),
     );
     const shoulder = vectors.current[2].set(
-      Math.cos(yaw.current) * 0.48,
+      Math.cos(yaw.current) * 0.48 * presentation.shoulder,
       0,
-      -Math.sin(yaw.current) * 0.48,
+      -Math.sin(yaw.current) * 0.48 * presentation.shoulder,
     );
-    const aimBlend = aiming.current ? 1 : 0;
-    const cameraDistance = THREE.MathUtils.lerp(3.25, 2.1, aimBlend);
+    smoothAim.current = THREE.MathUtils.damp(smoothAim.current, aiming.current ? 1 : 0, 12, dt);
+    const aimBlend = smoothAim.current;
+    const cameraDistance = THREE.MathUtils.lerp(3.15, 1.35, aimBlend);
     const desired = vectors.current[3]
       .copy(target)
       .addScaledVector(forward, -cameraDistance)
@@ -590,17 +614,29 @@ function Controller() {
       .addScaledVector(forward, 10);
     if (r.immune > 1.1 && s.mode === "playing")
       look.x += Math.sin(r.time * 60) * 0.025;
+    if (s.mode === "playing") look.y += Math.max(0, 1 - (r.time - r.shotAt) / 0.16) * 0.12;
     camera.lookAt(look);
     const perspective = camera as THREE.PerspectiveCamera;
     perspective.fov = THREE.MathUtils.lerp(
       perspective.fov,
-      aiming.current ? 57 : 68,
+      aiming.current ? 51 : input.current.has("ShiftLeft") ? 71 : 68,
       1 - Math.exp(-dt * 10),
     );
     perspective.updateProjectionMatrix();
     if (s.mode !== "playing") return;
+    footsteps.current += dt * Math.hypot(...(r.velocity ?? [0, 0]));
+    if (footsteps.current > 1.6) { sound("step", s.volume * 0.55); footsteps.current = 0; }
+    ambience.current += dt;
+    if (ambience.current > 5.5) {
+      ambience.current = 0;
+      const nearby = r.enemies.find(e => e.hp > 0 && enemyActive(e, r) && Math.hypot(e.x - r.position[0], e.z - r.position[1]) < 8);
+      if (nearby) {
+        const dx = nearby.x - r.position[0], dz = nearby.z - r.position[1], distance = Math.hypot(dx, dz);
+        sound(nearby.boss >= 0 ? "roar" : "groan", s.volume / (1 + distance * 0.25), (Math.cos(yaw.current) * dx - Math.sin(yaw.current) * dz) / Math.max(1, distance));
+      }
+    }
     step.current += dt;
-    if (step.current < 1 / 30) return;
+    if (step.current < 1 / 60) return;
     const delta = step.current;
     step.current = 0;
     fireTimer.current -= delta;
@@ -640,6 +676,7 @@ function Controller() {
       reload === 0
     ) {
       fireTimer.current = 0.26;
+      firing.current = false;
       if (mag <= 0) {
         sound("empty", s.volume);
         s.notify("Magazine empty · press R to reload");
@@ -663,11 +700,12 @@ function Controller() {
         if (first?.object.userData.enemyId) {
           // Also check the line from muzzle, so third-person aiming cannot shoot around corners.
           if (clearLine([x, z], [first.point.x, first.point.z], solids)) {
+            impact.position.copy(first.point); impact.at = r.time; impact.head = first.object.userData.part === "head";
             s.hit(
               first.object.userData.enemyId,
               first.object.userData.part === "head",
             );
-            sound("hit", s.volume);
+            sound(first.object.userData.part === "head" ? "headshot" : "hit", s.volume);
           }
         }
       }
@@ -681,24 +719,17 @@ function Controller() {
   return null;
 }
 function Enemies() {
-  const run = useGame((s) => s.run);
+  const ids = useGame(useShallow((s) => {
+    const visible = s.run.enemies.filter(e =>
+    ((e.hp > 0 && enemyActive(e, s.run)) || (e.diedAt !== undefined && s.run.time - e.diedAt < 1.8)) &&
+    Math.hypot(e.x - s.run.position[0], e.z - s.run.position[1]) < 11
+    ).sort((a, b) => Math.hypot(a.x - s.run.position[0], a.z - s.run.position[1]) - Math.hypot(b.x - s.run.position[0], b.z - s.run.position[1]));
+    return [...visible.filter(e => e.boss < 0).slice(0, 4), ...visible.filter(e => e.boss >= 0).slice(0, 1)].map(e => e.id);
+  }));
   return (
     <>
-      {run.enemies
-        .filter(
-          (e) =>
-            ((e.hp > 0 && enemyActive(e, run)) ||
-              (e.diedAt !== undefined && run.time - e.diedAt < 0.8)) &&
-            Math.hypot(e.x - run.position[0], e.z - run.position[1]) < 11,
-        )
-        .sort(
-          (a, b) =>
-            Math.hypot(a.x - run.position[0], a.z - run.position[1]) -
-            Math.hypot(b.x - run.position[0], b.z - run.position[1]),
-        )
-        .slice(0, 5)
-        .map((e) => (
-          <Creature key={e.id} enemy={e} />
+      {ids.map((id) => (
+          <Creature key={id} enemy={useGame.getState().run.enemies.find(e => e.id === id)!} />
         ))}
     </>
   );
@@ -706,13 +737,17 @@ function Enemies() {
 function World() {
   return (
     <>
-      <color attach="background" args={["#192521"]} />
-      <fog attach="fog" args={["#25352f", 12, 40]} />
-      <ambientLight intensity={0.65} />
-      <hemisphereLight args={["#b8d1d5", "#42412f", 1.2]} />
-      <directionalLight position={[6, 15, 8]} intensity={1.4} color="#dac9a3" />
+      <color attach="background" args={["#161c1d"]} />
+      <fog attach="fog" args={["#273032", 9, 30]} />
+      <ambientLight intensity={0.22} />
+      <hemisphereLight args={["#a1b6c7", "#352b21", 0.85]} />
+      <directionalLight castShadow position={[4, 8, 2]} intensity={2.2} color="#d6deeb"
+        shadow-mapSize={[1024, 1024]} shadow-camera-left={-15} shadow-camera-right={15}
+        shadow-camera-top={12} shadow-camera-bottom={-12} shadow-normalBias={0.035} />
       <House />
       <LicensedDoors />
+      <InteractiveDrawers />
+      <CombatEffects />
       <Pickups />
       <Player />
       <Enemies />
@@ -730,7 +765,7 @@ export const GameScene = memo(function GameScene() {
   }, []);
   return (
     <Canvas
-      shadows={false}
+      shadows={quality !== "low"}
       dpr={quality === "low" ? 0.75 : quality === "high" ? 1.25 : 1}
       camera={{ fov: 66, near: 0.08, far: 55 }}
       gl={{ antialias: true, powerPreference: "high-performance" }}

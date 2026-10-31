@@ -11,6 +11,12 @@ test("saved positions under newly added reception furniture recover to walkable 
   assert.equal(safePosition(valid, solids), valid);
 });
 const root = new URL("../public/assets/quaternius/", import.meta.url);
+test("archive zombie has authored locomotion, attacks, skeleton and embedded texture", () => {
+  const b = readFileSync(new URL("archive-zombie.glb", root));
+  const j = JSON.parse(b.subarray(20, 20 + b.readUInt32LE(12)).toString());
+  assert(j.skins.length && j.images.length);
+  for (const name of ["Idle", "Walk", "Run", "Idle_Attack"]) assert(j.animations.some((a: {name: string}) => a.name === name));
+});
 const manifest = JSON.parse(
   readFileSync(new URL("manifest.json", root), "utf8"),
 );

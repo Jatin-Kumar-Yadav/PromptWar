@@ -17,6 +17,8 @@ export function Help() {
         {[
           ["W A S D", "Move"],
           ["Mouse", "Look / aim"],
+          ["Right click", "Hold to aim"],
+          ["Q", "Switch shoulder"],
           ["Left click", "Fire"],
           ["R", "Reload"],
           ["E", "Interact / collect"],
@@ -34,7 +36,7 @@ export function Help() {
       </div>
       <p className="hint">
         Aim at the head for a one-shot normal kill. Body shots deal 1 damage.
-        Boss headshots deal 3. Orange enemies are winding up: step back before
+        Boss headshots deal 3. Raised arms warn of an incoming attack: step back before
         they strike. Three hits down you; health regenerates every 8 undamaged
         seconds.
       </p>

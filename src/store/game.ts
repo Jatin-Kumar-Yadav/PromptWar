@@ -11,6 +11,11 @@ import {
 import { bossConfigs, pickupDefs, type Vec2 } from "../game/world";
 export type Mode = "menu" | "playing" | "paused" | "dead" | "victory";
 export interface Enemy {
+  alertUntil?: number;
+  target?: Vec2;
+  special?: "charge" | "slam" | "call";
+  specialUntil?: number;
+  specialCooldown?: number;
   diedAt?: number;
   id: string;
   x: number;
@@ -26,6 +31,7 @@ export interface Enemy {
   state: "idle" | "patrol" | "chase" | "attack" | "stunned" | "dead";
 }
 export interface Run {
+  velocity?: Vec2;
   position: Vec2;
   yaw: number;
   health: number;
@@ -62,7 +68,7 @@ export const SAVE_KEY = "inbox-evil-v1";
 function initialRun(): Run {
   const emails = generateEmails();
   return {
-    position: [4, 5],
+    position: [4, 3.5],
     yaw: Math.PI,
     health: 3,
     mag: 12,
@@ -77,7 +83,7 @@ function initialRun(): Run {
     puzzles: [],
     collected: [],
     keys: [],
-    checkpoint: [4, 5],
+    checkpoint: [4, 3.5],
     xp: 0,
     correct: 0,
     attempts: 0,
@@ -220,6 +226,7 @@ export function validateSave(value: unknown): value is Saved {
     "hitAt",
   ] as const;
   if (numeric.some((k) => !Number.isFinite(r[k]))) return false;
+  if (r.velocity !== undefined && !isVec(r.velocity)) return false;
   if (
     r.health < 0 ||
     r.health > 3 ||
@@ -258,6 +265,8 @@ export function validateSave(value: unknown): value is Saved {
         Number.isFinite(e.boss) &&
         Number.isFinite(e.cooldown) &&
         Number.isFinite(e.stun) &&
+        (e.target === undefined || isVec(e.target)) &&
+        [e.alertUntil, e.specialUntil, e.specialCooldown].every(n => n === undefined || Number.isFinite(n)) &&
         Number.isFinite(e.windup),
     )
   )
@@ -396,6 +405,7 @@ export const useGame = create<Store>((set, get) => ({
             ...e,
             hp,
             diedAt: hp===0 ? s.run.time : undefined,
+            windup: 0,
             stun: enemy.boss >= 0 ? (hp % 6 === 0 ? 0.55 : 0.02) : 0.3,
             state: hp === 0 ? ("dead" as const) : ("stunned" as const),
           }
@@ -575,6 +585,7 @@ export const useGame = create<Store>((set, get) => ({
         ...r,
         health: 3,
         position: [...r.checkpoint],
+        velocity: [0, 0],
         mag: 12,
         reserve: Math.max(36, r.reserve),
         reload: 0,
@@ -585,6 +596,11 @@ export const useGame = create<Store>((set, get) => ({
           x: e.home[0],
           z: e.home[1],
           windup: 0,
+          special: undefined,
+          specialUntil: 0,
+          specialCooldown: 4,
+          target: undefined,
+          alertUntil: 0,
           cooldown: 3,
         })),
       },

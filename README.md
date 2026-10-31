@@ -2,6 +2,8 @@
 
 The current character and furniture pipeline uses locally bundled, CC0 Quaternius assets with authored skeletal clips. See [asset sources, license records, validation and remaining limitations](ASSET-INTEGRATION.md). Press **F3** in the game for the developer performance overlay.
 
+The latest [survival gameplay pass](SURVIVAL-REBUILD.md) adds closer shoulder aiming, animated-bone hitboxes, obstacle-aware pursuit, boss specials, reception dressing, drawers, and adaptive resolution. It remains a stylized browser game; it does not match the supplied AAA reference imagery.
+
 A desktop browser survival-horror game about restoring an infected **mock** inbox. Explore a procedural, six-room house, fight infected messages, solve organization puzzles, and inspect every simulated email change.
 
 **No Gmail integration, authentication, backend, or real email access.** All 220 messages are fictional. Gameplay and mailbox data stay in this browser's localStorage. No model is trained through play.
@@ -31,7 +33,9 @@ npm test
 | ------------- | ------------------------------- |
 | W / A / S / D | Move relative to camera         |
 | Mouse         | Camera / aim                    |
-| Left mouse    | Shoot (hold for repeated fire)  |
+| Right mouse   | Hold to aim                    |
+| Left mouse    | Fire one round per press       |
+| Q             | Switch camera shoulder         |
 | R             | Reload                          |
 | E             | Collect nearby cache / interact |
 | F             | Consume herb                    |
@@ -40,7 +44,7 @@ npm test
 | M             | House map                       |
 | Escape        | Pause / release mouse           |
 
-Three body shots or one headshot eliminate a normal infected. Bosses have 24–30 HP; headshots deal 3 damage. Their orange windup warns of an incoming attack. Retreat before it lands. You have three health points, 1.5 seconds of damage immunity, and regenerate one point per eight undamaged **game** seconds. Pausing stops the game clock.
+Three body shots or one headshot eliminate a normal infected. Bosses have 24–30 HP; headshots deal 3 damage. Raised arms and HUD warnings telegraph attacks. Retreat from a swing, sidestep a charge, or leave the Tyrant's marked area. You have three health points, 1.5 seconds of damage immunity, and regenerate one point per eight undamaged **game** seconds. Pausing stops the game clock.
 
 ## Mission route (spoilers)
 

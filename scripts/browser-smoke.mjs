@@ -40,9 +40,31 @@ const until = async (code) =>
     code,
     { timeout: 60000, polling: 80 },
   );
-const shoot = async () => {
+const shoot = async (id = "zombie-0", part = "body") => {
   const mag = await state("return s.run.mag");
   await page.mouse.down({ button: "right" });
+  // Aim at the actual animated hitbox, not a hard-coded height for an old model.
+  for (let i = 0; i < 3; i++) {
+    const time = await state("return s.run.time");
+    await until(`return s.run.time>${time + 0.2}`);
+    await page.evaluate(async ({id, part}) => {
+      const urls = performance.getEntriesByType('resource').map(e => e.name);
+      const fiber = await import(urls.find(n => n.includes('@react-three_fiber')));
+      const art = await import(urls.find(n => n.includes('/src/game/Art.tsx')));
+      const root = fiber._roots.get(document.querySelector('canvas')).store.getState();
+      let box;
+      root.scene.traverse(o => { if (o.userData.enemyId === id && o.userData.part === part) box = o; });
+      const point = box.getWorldPosition(root.camera.position.clone());
+      const direction = point.sub(root.camera.position);
+      const yaw = Math.atan2(-direction.x, -direction.z);
+      const pitch = Math.atan2(-direction.y, Math.hypot(direction.x, direction.z));
+      const previous = window.__inboxTestStore.getState().run.yaw;
+      const change = Math.atan2(Math.sin(yaw - previous), Math.cos(yaw - previous));
+      const event = new MouseEvent('mousemove');
+      Object.defineProperties(event, {movementX:{value:-change / 0.0025}, movementY:{value:(pitch - art.presentation.pitch) / 0.002}});
+      window.dispatchEvent(event);
+    }, {id, part});
+  }
   await page.mouse.down();
   await until(`return s.run.mag<${mag}`);
   await page.mouse.up();
@@ -134,7 +156,7 @@ try {
   });
   const aimTime = await state("return s.run.time");
   await until(`return s.run.time>${aimTime + 0.45}`);
-  await shoot();
+  await shoot("zombie-1", "head");
   await pause();
   assert.equal(
     await state("return s.run.enemies[1].hp"),
@@ -228,7 +250,7 @@ try {
   await resume();
   const settle = await state("return s.run.time");
   await until(`return s.run.time>${settle + 0.5}`);
-  for (let i = 0; i < 3; i++) await shoot();
+  for (let i = 0; i < 3; i++) await shoot("boss-3");
   await page.getByRole("heading", { name: "INBOX RESTORED." }).waitFor();
   assert.equal(await state("return s.mail.emails[200].folder"), "Deleted");
   const [download] = await Promise.all([
