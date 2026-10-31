@@ -15,18 +15,23 @@ import {
   interactions,
   move,
   obstacles,
+  safePosition,
   pickupDefs,
   rooms,
   walls,
 } from "./world";
 import { sound } from "../utils/audio";
 import { advanceRun } from "./systems";
+import { LicensedActor } from "./LicensedActor";
+import { PerformanceProbe } from "./PerformanceProbe";
+import { LicensedDoors } from "./LicensedDoors";
 import {
   Actor,
   Asset,
   Batch,
   Collectibles,
   Mansion,
+  LicensedProp,
   presentation,
   surface,
 } from "./Art";
@@ -135,51 +140,89 @@ function House() {
           />
         </group>
       ))}
-      {furniture.map((f, i) => (
-        <group key={i}>
-          <Box
-            p={[f.x, f.h / 2, f.z]}
-            size={[f.w, f.h, f.d]}
-            color={
-              f.kind === "sofa"
-                ? "#536354"
+      {furniture.map((f, i) =>
+        ["desk", "shelf", "bed", "terminal", "chair", "plant"].includes(
+          f.kind ?? "",
+        ) ? (
+          <LicensedProp
+            key={i}
+            name={
+              f.kind === "shelf"
+                ? "bookshelf"
                 : f.kind === "bed"
-                  ? "#858373"
-                  : "#5c4938"
+                  ? "bed"
+                  : f.kind === "terminal"
+                    ? "drawer"
+                    : f.kind === "chair"
+                      ? "chair"
+                      : f.kind === "plant"
+                        ? "plant"
+                        : "table"
             }
+            position={[f.x, 0, f.z]}
+            fit={[f.w, f.h, f.d]}
+            rotation={f.kind === "shelf" && f.d > f.w ? Math.PI / 2 : 0}
           />
-          {f.kind === "shelf" ? (
-            Array.from({ length: 3 }, (_, j) => (
-              <group key={j}>
-                <Box
-                  p={[f.x, f.h * 0.25 + j * 0.6, f.z + 0.02]}
-                  size={[f.w + 0.08, 0.08, f.d + 0.1]}
-                  color="#302c23"
-                />
-                {Array.from({ length: 5 }, (_, k) => (
-                  <Box
-                    key={k}
-                    p={[
-                      f.x - f.w * 0.35 + k * f.w * 0.16,
-                      0.55 + j * 0.6,
-                      f.z + f.d * 0.38,
-                    ]}
-                    size={[0.1, 0.32, 0.18]}
-                    color={["#8a7751", "#556f66", "#87594e"][k % 3]}
-                    solid={false}
-                  />
-                ))}
-              </group>
-            ))
-          ) : (
+        ) : f.kind === "sofa" ? (
+          <LicensedProp
+            key={i}
+            name="couch"
+            position={[f.x, 0, f.z]}
+            width={f.w}
+          />
+        ) : f.kind === "box" ? (
+          <LicensedProp
+            key={i}
+            name="chest"
+            position={[f.x, 0, f.z]}
+            width={f.w}
+          />
+        ) : (
+          <group key={i}>
             <Box
-              p={[f.x, f.h + 0.04, f.z]}
-              size={[f.w + 0.08, 0.08, f.d + 0.08]}
-              color={f.kind === "bed" ? "#b8b09a" : "#806b50"}
+              p={[f.x, f.h / 2, f.z]}
+              size={[f.w, f.h, f.d]}
+              color={
+                f.kind === "sofa"
+                  ? "#536354"
+                  : f.kind === "bed"
+                    ? "#858373"
+                    : "#5c4938"
+              }
             />
-          )}
-        </group>
-      ))}
+            {f.kind === "shelf" ? (
+              Array.from({ length: 3 }, (_, j) => (
+                <group key={j}>
+                  <Box
+                    p={[f.x, f.h * 0.25 + j * 0.6, f.z + 0.02]}
+                    size={[f.w + 0.08, 0.08, f.d + 0.1]}
+                    color="#302c23"
+                  />
+                  {Array.from({ length: 5 }, (_, k) => (
+                    <Box
+                      key={k}
+                      p={[
+                        f.x - f.w * 0.35 + k * f.w * 0.16,
+                        0.55 + j * 0.6,
+                        f.z + f.d * 0.38,
+                      ]}
+                      size={[0.1, 0.32, 0.18]}
+                      color={["#8a7751", "#556f66", "#87594e"][k % 3]}
+                      solid={false}
+                    />
+                  ))}
+                </group>
+              ))
+            ) : (
+              <Box
+                p={[f.x, f.h + 0.04, f.z]}
+                size={[f.w + 0.08, 0.08, f.d + 0.08]}
+                color={f.kind === "bed" ? "#b8b09a" : "#806b50"}
+              />
+            )}
+          </group>
+        ),
+      )}
       {doors.map((d) => {
         const locked = !!d.requires && !keys.includes(d.requires);
         return (
@@ -189,13 +232,6 @@ function House() {
               size={d.axis === "z" ? [0.32, 0.6, 2.5] : [2.5, 0.6, 0.32]}
               color="#302f27"
             />
-            {locked ? (
-              <Box
-                p={[d.x, 1.45, d.z]}
-                size={d.axis === "z" ? [0.26, 2.9, 2.35] : [2.35, 2.9, 0.26]}
-                color="#5e5240"
-              />
-            ) : null}
             <Text
               position={[
                 d.x + (d.axis === "z" ? -0.2 : 0),
@@ -214,7 +250,42 @@ function House() {
       })}
       {interactions.map((o) => (
         <group key={o.id} position={[o.x, 0, o.z]}>
-          {o.id==='note'||o.id==='digits'?<><mesh position={[0,1.03,0]} rotation={[-Math.PI/2,0,0]}><planeGeometry args={[.45,.3]}/><meshStandardMaterial color="#eee2ba" map={surface('paper')} side={THREE.DoubleSide}/></mesh><Text position={[0,1.04,0]} rotation={[-Math.PI/2,0,0]} fontSize={.065} color="#302e25">{o.id==='note'?'314':'1:7  2:2  3:6'}</Text></>:<><Asset name="cabinet"/>{['board','supply','exit'].includes(o.id)?<Box p={[0,1.2,0]} size={[.7,.45,.06]} color="#709d92" solid={false}/>:null}</>}
+          {o.id === "note" || o.id === "digits" ? (
+            <>
+              <mesh position={[0, 1.03, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+                <planeGeometry args={[0.45, 0.3]} />
+                <meshStandardMaterial
+                  color="#eee2ba"
+                  map={surface("paper")}
+                  side={THREE.DoubleSide}
+                />
+              </mesh>
+              <Text
+                position={[0, 1.04, 0]}
+                rotation={[-Math.PI / 2, 0, 0]}
+                fontSize={0.065}
+                color="#302e25"
+              >
+                {o.id === "note" ? "314" : "1:7  2:2  3:6"}
+              </Text>
+            </>
+          ) : (
+            <>
+              <LicensedProp
+                name="drawer"
+                position={[0, 0, 0]}
+                fit={[1.3, 0.9, 0.6]}
+              />
+              {["board", "supply", "exit"].includes(o.id) ? (
+                <Box
+                  p={[0, 1.2, 0]}
+                  size={[0.7, 0.45, 0.06]}
+                  color="#709d92"
+                  solid={false}
+                />
+              ) : null}
+            </>
+          )}
         </group>
       ))}
     </Batch>
@@ -224,7 +295,7 @@ function Creature({ enemy: e }: { enemy: Enemy }) {
   const scale = e.boss >= 0 ? [1.65, 1.8, 1.65, 1.85][e.boss] : 1;
   return (
     <>
-      <Actor id={e.id} />
+      <LicensedActor id={e.id} />
       <group position={[e.x, 0, e.z]} scale={scale}>
         <mesh position={[0, 1, 0]} userData={{ enemyId: e.id, part: "body" }}>
           <boxGeometry args={[0.55, 0.8, 0.4]} />
@@ -245,7 +316,7 @@ function Pickups() {
   return <Collectibles />;
 }
 function Player() {
-  return <Actor />;
+  return <LicensedActor />;
 }
 function Controller() {
   const { camera, scene, gl } = useThree();
@@ -260,7 +331,7 @@ function Controller() {
   const ray = useRef(new THREE.Raycaster());
   const cameraRay = useRef(new THREE.Raycaster());
   const ready = useRef(false);
-  const vectors=useRef(Array.from({length:7},()=>new THREE.Vector3()));
+  const vectors = useRef(Array.from({ length: 7 }, () => new THREE.Vector3()));
   const occludersRef = useRef<THREE.Object3D[]>([]);
   const shotTargetsRef = useRef<THREE.Object3D[]>([]);
   const targetRefresh = useRef(0);
@@ -366,10 +437,12 @@ function Controller() {
           if (o.id === "note") {
             s.update({ note: true });
             s.notify("Sofa note: the drawer combination is 314.");
-            s.setPanel('note');document.exitPointerLock?.();
+            s.setPanel("note");
+            document.exitPointerLock?.();
           } else if (o.id === "digits") {
             s.update({ digits: true });
-            s.setPanel('digits');document.exitPointerLock?.();
+            s.setPanel("digits");
+            document.exitPointerLock?.();
             s.notify("Drawer slips: first = 7 · second = 2 · third = 6");
           } else {
             s.setPanel(o.id);
@@ -444,6 +517,12 @@ function Controller() {
     const r = s.run;
     const dt = Math.min(rawDelta, 0.05);
     const solids = obstacles(r.keys);
+    const safe = safePosition(r.position, solids);
+    if (safe !== r.position) {
+      s.update({ position: safe });
+      s.save();
+      return;
+    }
     targetRefresh.current -= dt;
     if (targetRefresh.current <= 0 || !shotTargetsRef.current.length) {
       occludersRef.current.length = 0;
@@ -471,10 +550,11 @@ function Controller() {
     );
     const aimBlend = aiming.current ? 1 : 0;
     const cameraDistance = THREE.MathUtils.lerp(3.25, 2.1, aimBlend);
-    const desired = vectors.current[3].copy(target)
+    const desired = vectors.current[3]
+      .copy(target)
       .addScaledVector(forward, -cameraDistance)
       .addScaledVector(shoulder, 1 + aimBlend * 0.35);
-    desired.y=Math.min(3.2,Math.max(.25,desired.y));
+    desired.y = Math.min(3.2, Math.max(0.25, desired.y));
     const dir = vectors.current[4].copy(desired).sub(target);
     const distance = dir.length();
     cameraRay.current.set(target, dir.normalize());
@@ -490,7 +570,9 @@ function Controller() {
       ready.current = true;
     }
     camera.position.lerp(desired, 1 - Math.exp(-dt * 15));
-    const actualDirection = vectors.current[5].copy(camera.position).sub(target);
+    const actualDirection = vectors.current[5]
+      .copy(camera.position)
+      .sub(target);
     const actualDistance = actualDirection.length();
     cameraRay.current.set(target, actualDirection.normalize());
     const actualHit = cameraRay.current
@@ -503,7 +585,9 @@ function Controller() {
           actualDirection,
           Math.max(0.15, actualHit.distance - 0.15),
         );
-    const look = vectors.current[6].copy(camera.position).addScaledVector(forward, 10);
+    const look = vectors.current[6]
+      .copy(camera.position)
+      .addScaledVector(forward, 10);
     if (r.immune > 1.1 && s.mode === "playing")
       look.x += Math.sin(r.time * 60) * 0.025;
     camera.lookAt(look);
@@ -628,10 +712,12 @@ function World() {
       <hemisphereLight args={["#b8d1d5", "#42412f", 1.2]} />
       <directionalLight position={[6, 15, 8]} intensity={1.4} color="#dac9a3" />
       <House />
+      <LicensedDoors />
       <Pickups />
       <Player />
       <Enemies />
       <Controller />
+      <PerformanceProbe />
     </>
   );
 }

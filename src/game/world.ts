@@ -30,6 +30,10 @@ export const walls: Solid[] = [
   { x: 15, z: 9, w: 18, d: 0.25, h: 3.5 },
 ];
 export const furniture: Solid[] = [
+  { x: 5, z: 1.4, w: 2.6, d: 0.8, h: 1, kind: "desk" },
+  { x: 5, z: 0.55, w: 0.65, d: 0.6, h: 1, kind: "chair" },
+  { x: 6.9, z: 7.5, w: 0.45, d: 0.45, h: 0.9, kind: "plant" },
+  { x: 18, z: 0.65, w: 0.65, d: 0.6, h: 1, kind: "chair" },
   { x: 2, z: 2, w: 1.6, d: 0.7, h: 1, kind: "desk" },
   { x: 10, z: 2, w: 2.4, d: 1, h: 0.7, kind: "sofa" },
   { x: 14, z: 7, w: 1.8, d: 0.8, h: 1, kind: "desk" },
@@ -104,6 +108,20 @@ export function blocked(x: number, z: number, solids: Solid[], radius = 0.3) {
       Math.abs(x - s.x) < s.w / 2 + radius &&
       Math.abs(z - s.z) < s.d / 2 + radius,
   );
+}
+/** Keep older saves usable when a furniture upgrade occupies their saved position. */
+export function safePosition(position: Vec2, solids: Solid[]): Vec2 {
+  if (!blocked(position[0], position[1], solids)) return position;
+  for (let radius = 0.4; radius <= 4; radius += 0.2) {
+    for (let i = 0; i < 24; i++) {
+      const a = (i * Math.PI) / 12,
+        x = position[0] + Math.cos(a) * radius,
+        z = position[1] + Math.sin(a) * radius;
+      if (!blocked(x, z, solids) && x > 0.3 && x < 23.7 && z > 0.3 && z < 17.7)
+        return [x, z];
+    }
+  }
+  return position;
 }
 export function move(
   pos: Vec2,

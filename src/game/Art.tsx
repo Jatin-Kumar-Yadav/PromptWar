@@ -8,7 +8,14 @@ import { useGame } from "../store/game";
 import { pickupDefs, rooms } from "./world";
 export const presentation = {
   aiming: false,
-  quality: (()=>{try{const q=localStorage.getItem('dead-inbox-quality');return q&&['low','medium','high'].includes(q)?q:'medium';}catch{return 'medium';}})(),
+  quality: (() => {
+    try {
+      const q = localStorage.getItem("dead-inbox-quality");
+      return q && ["low", "medium", "high"].includes(q) ? q : "medium";
+    } catch {
+      return "medium";
+    }
+  })(),
 };
 export function Batch({ children }: { children: ReactNode }) {
   const root = useRef<T.Group>(null);
@@ -36,6 +43,8 @@ export function Batch({ children }: { children: ReactNode }) {
         m.emissive.getHex(),
         m.roughness,
         m.metalness,
+        Object.keys(o.geometry.attributes).sort().join(","),
+        !!o.geometry.index,
       ].join(":");
       let b = buckets.get(key);
       if (!b) {
@@ -85,6 +94,50 @@ export function Asset({
     />
   );
 }
+export function LicensedProp({
+  name,
+  position,
+  width = 1,
+  fit,
+  rotation = 0,
+}: {
+  name: string;
+  position: [number, number, number];
+  width?: number;
+  fit?: [number, number, number];
+  rotation?: number;
+}) {
+  const { scene } = useGLTF(`/assets/quaternius/${name}.glb`);
+  const data = useMemo(() => {
+    const model = scene.clone(true);
+    model.rotation.y = rotation;
+    model.traverse((o) => {
+      if (o instanceof T.Mesh) o.userData.solid = true;
+    });
+    model.updateMatrixWorld(true);
+    const box = new T.Box3().setFromObject(model),
+      size = box.getSize(new T.Vector3()),
+      center = box.getCenter(new T.Vector3());
+    return {
+      model,
+      scale: fit
+        ? new T.Vector3(
+            fit[0] / Math.max(size.x, 0.01),
+            fit[1] / Math.max(size.y, 0.01),
+            fit[2] / Math.max(size.z, 0.01),
+          )
+        : width / Math.max(size.x, 0.01),
+      offset: new T.Vector3(-center.x, -box.min.y, -center.z),
+    };
+  }, [scene, width, fit?.[0], fit?.[1], fit?.[2], rotation]);
+  return (
+    <group position={position} scale={data.scale}>
+      <group position={data.offset}>
+        <primitive object={data.model} dispose={null} />
+      </group>
+    </group>
+  );
+}
 export function Actor({ id }: { id?: string }) {
   const initial = useGame.getState().run.enemies.find((e) => e.id === id);
   const name = id
@@ -95,7 +148,7 @@ export function Actor({ id }: { id?: string }) {
   const { scene } = useGLTF(`/models/${name}.glb`);
   const model = useMemo(() => scene.clone(true), [scene]);
   const root = useRef<T.Group>(null);
-  const flash=useRef<T.Mesh>(null);
+  const flash = useRef<T.Mesh>(null);
   const last = useRef(new T.Vector3());
   const phase = useRef(0);
   const facing = useRef(0);
@@ -175,12 +228,17 @@ export function Actor({ id }: { id?: string }) {
       }
       const recoil = Math.max(0, 1 - (r.time - r.shotAt) / 0.16);
       nodes.armR.rotation.x -= recoil * 0.25;
-      const pistol=model.getObjectByName('pistol');
-      if(pistol)pistol.rotation.x=-nodes.armR.rotation.x-nodes.elbowR.rotation.x;
-      if(flash.current)flash.current.visible=recoil>.35;
+      const pistol = model.getObjectByName("pistol");
+      if (pistol)
+        pistol.rotation.x = -nodes.armR.rotation.x - nodes.elbowR.rotation.x;
+      if (flash.current) flash.current.visible = recoil > 0.35;
       if (r.health <= 0) root.current.rotation.z = Math.PI * 0.45;
     } else {
-      if(e.hp<=0)root.current.rotation.z=Math.min(1.5,(r.time-(e.diedAt??r.time))*2);
+      if (e.hp <= 0)
+        root.current.rotation.z = Math.min(
+          1.5,
+          (r.time - (e.diedAt ?? r.time)) * 2,
+        );
       nodes.head.rotation.z = 0.15 + Math.sin(r.time * 2 + e.x) * 0.09;
       if (e.windup > 0) nodes.armR.rotation.x = -2.1;
       if (e.stun > 0) nodes.head.rotation.x = -0.4;
@@ -194,7 +252,12 @@ export function Actor({ id }: { id?: string }) {
   return (
     <group ref={root} scale={scale}>
       <primitive object={model} dispose={null} />
-      {!id?<mesh ref={flash} position={[.25,1.35,-.95]} visible={false}><sphereGeometry args={[.09,5,4]}/><meshBasicMaterial color="#ffe2a5"/></mesh>:null}
+      {!id ? (
+        <mesh ref={flash} position={[0.25, 1.35, -0.95]} visible={false}>
+          <sphereGeometry args={[0.09, 5, 4]} />
+          <meshBasicMaterial color="#ffe2a5" />
+        </mesh>
+      ) : null}
       {!id ? (
         <mesh position={[0.35, 1.4, -0.8]} visible={false} name="muzzle" />
       ) : null}
@@ -343,11 +406,22 @@ export function Mansion() {
               <Part p={[12, 0.4, 7.7]} s={[2.4, 0.8, 0.5]} />
               <Part p={[12, 1, 7.7]} s={[2.7, 0.12, 0.65]} c="#aaa58d" />
               <Part p={[12, 0.4, 7.4]} s={[1.5, 0.7, 0.05]} c="#171c18" />
-              <Part p={[12, 0.45, 2.8]} s={[1.6, 0.12, 0.7]} />
-              {[-0.6, 0.6].map((x) => (
-                <Part key={x} p={[12 + x, 0.2, 2.8]} s={[0.08, 0.4, 0.5]} />
-              ))}
+              <LicensedProp
+                name="coffee-table"
+                position={[12, 0, 2.8]}
+                fit={[1.6, 0.5, 0.7]}
+              />
             </>
+          ) : null}
+          {i === 2 ? (
+            <LicensedProp name="lamp" position={[18, 1, 2]} width={0.35} />
+          ) : null}
+          {i === 5 ? (
+            <LicensedProp
+              name="pipes"
+              position={[23.4, 0, 15]}
+              fit={[0.35, 2.5, 2]}
+            />
           ) : null}
           {i === 5
             ? [0, 1, 2].map((j) => (

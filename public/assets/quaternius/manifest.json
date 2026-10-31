@@ -1,0 +1,287 @@
+{
+  "author": "Quaternius",
+  "pack": "Zombie Apocalypse Kit",
+  "source": "https://quaternius.com/packs/zombieapocalypsekit.html",
+  "folder": "https://drive.google.com/drive/folders/1mWP6sCHun7OUMHQeDNZLrXTteXlzWg_t",
+  "license": "CC0-1.0",
+  "licenseNote": "The official pack page declares CC0; the supplied License.txt also declares CC0 but its heading says Ultimate Platformer Pack. Original license file retained verbatim.",
+  "assets": [
+    {
+      "name": "survivor",
+      "id": "1hCbVych1BygiMK_9KttpI7MxSAmRR-aD",
+      "bytes": 929736,
+      "sha256": "b5f2e10962148fad202a922f664ad0e9e3ca895e7af86fcd23fda1caefe00bb8",
+      "clips": [
+        "Death",
+        "Duck",
+        "HitReact",
+        "Idle",
+        "Idle_Gun",
+        "Jump",
+        "Jump_Idle",
+        "Jump_Land",
+        "No",
+        "Punch",
+        "Run",
+        "Run_Gun",
+        "Run_Slash",
+        "Run_Stab",
+        "Slash",
+        "Stab",
+        "Walk",
+        "Walk_Gun",
+        "Wave",
+        "Yes"
+      ]
+    },
+    {
+      "name": "zombie",
+      "id": "1S6EfXv0Fc6SiqyoPx5gNF48MI0OajNLr",
+      "bytes": 883864,
+      "sha256": "987f840dc8068e80f2f4f0daa92f6e158a8c347effe6d83ed522b14d3f2b7e68",
+      "clips": [
+        "Crawl",
+        "Death",
+        "HitReact",
+        "Idle",
+        "Idle_Attack",
+        "Jump",
+        "Jump_Idle",
+        "Jump_Land",
+        "No",
+        "Punch",
+        "Run",
+        "Run_Arms",
+        "Run_Attack",
+        "Walk",
+        "Wave",
+        "Yes"
+      ]
+    },
+    {
+      "name": "zombie-arm",
+      "id": "19MMkSg5NkpeSNb6271EoN_pNeBlQpt4Z",
+      "bytes": 673696,
+      "sha256": "75e50bf812560578b6815e190f45e84ea57a578428f1fa2d9ec35c222d2fe682",
+      "clips": [
+        "Death",
+        "HitReact",
+        "Idle",
+        "Jump",
+        "Jump_Idle",
+        "Jump_Land",
+        "No",
+        "Punch",
+        "Run",
+        "Run_Arms",
+        "Run_Attack",
+        "Walk",
+        "Wave",
+        "Yes"
+      ]
+    },
+    {
+      "name": "zombie-heavy",
+      "id": "1PKHYBqygDy3ztkJLOQWx4fY00eFL0epN",
+      "bytes": 858432,
+      "sha256": "5449fd6df240e62e949223f83976357988dba1c0a9cfc30756b8c1e491976501",
+      "clips": [
+        "Crawl",
+        "Death",
+        "HitReact",
+        "Idle",
+        "Idle_Attack",
+        "Jump",
+        "Jump_Idle",
+        "Jump_Land",
+        "No",
+        "Punch",
+        "Run",
+        "Run_Arms",
+        "Run_Attack",
+        "Walk",
+        "Wave",
+        "Yes"
+      ]
+    },
+    {
+      "name": "zombie-rib",
+      "id": "1mcGcs5UeeBpgbSwhu3r2yZWoB0V4dazt",
+      "bytes": 279800,
+      "sha256": "ce2a89fcc2c9e43aac18a763ddc4fe047e386a7a9a2ef7a1bf12543f0e1a3ae1",
+      "clips": [
+        "Crawl",
+        "Death",
+        "HitReact",
+        "Idle",
+        "Jump",
+        "Jump_Idle",
+        "Jump_Land",
+        "Run",
+        "Walk"
+      ]
+    },
+    {
+      "name": "security",
+      "id": "19b_vYql-uGYkn4tv67rT_isLnE79sX7r",
+      "bytes": 1095036,
+      "sha256": "0d7dfad21f3686dc2d06cc55217f9a0f27d6b1ec262819171e8098d9038be80a",
+      "clips": [
+        "Death",
+        "Duck",
+        "HitReact",
+        "Idle",
+        "Idle_Gun",
+        "Jump",
+        "Jump_Idle",
+        "Jump_Land",
+        "No",
+        "Punch",
+        "Run",
+        "Run_Gun",
+        "Run_Slash",
+        "Run_Stab",
+        "Slash",
+        "Stab",
+        "Walk",
+        "Walk_Gun",
+        "Wave",
+        "Yes"
+      ]
+    },
+    {
+      "name": "pistol",
+      "id": "1Fwuz1p1hreHAe8y8w99G1fJz5AefWLOR",
+      "bytes": 66728,
+      "sha256": "4d6a5c66ea0c73127fdcde38f16bd94b1985b22258e60050610b3b2e15cd4977",
+      "clips": []
+    },
+    {
+      "name": "couch",
+      "id": "1rgX-QENR7yW1WsXK0xvxem_odfaefLEk",
+      "bytes": 119656,
+      "sha256": "307c389b340312fee41b95a8e7ed70ecf2880eff5224018bf973ccc4c409f394",
+      "clips": []
+    },
+    {
+      "name": "chest",
+      "id": "1yEC_pV6-U8Tt56fwhXgfuN2iRYwQoA_M",
+      "bytes": 148268,
+      "sha256": "41c2338508be93592b3d4df47d834340a980c2193b9f730927966958395b71c2",
+      "clips": []
+    },
+    {
+      "name": "barrel",
+      "id": "114k_vH2gWjaumPc39bKfGRdRvkB8Ym4Q",
+      "bytes": 41136,
+      "sha256": "0efc9c214ead99f432d84b48f379e53efa9eefedabb11a8fe4b6588a6ae150eb",
+      "clips": []
+    },
+    {
+      "name": "pipes",
+      "id": "1hxT5Xnm77y6gXOKwriNSXonaxf4W-wdY",
+      "bytes": 55988,
+      "sha256": "14debc4b682b5f6c5eb04425984cb7849d8358f19760e9072824b688e7ff0e7f",
+      "clips": []
+    },
+    {
+      "name": "door",
+      "id": "1k4hz860eB_tkwFZK3CzHSQ1F4HCKPmVx",
+      "pack": "ultimatehomeinterior",
+      "source": "https://quaternius.com/packs/ultimatehomeinterior.html",
+      "license": "CC0-1.0",
+      "sourceSha256": "b26ccce8ff32194b203cc4a8e9be6707318880cc0757436126c576740b994043",
+      "sha256": "e886fdf28a611f7fb1d68f329d077ca4ff853a7ad94074a855e5671bd4484a0a",
+      "bytes": 20808,
+      "clips": []
+    },
+    {
+      "name": "drawer",
+      "id": "1sCeA2nhtk7BW5pNOSgUz3ysHhKEVaUxT",
+      "pack": "ultimatehomeinterior",
+      "source": "https://quaternius.com/packs/ultimatehomeinterior.html",
+      "license": "CC0-1.0",
+      "sourceSha256": "1b7874fc04d6064e03eaf821095030db54369ab7f1d272810a34001cbf51bb3d",
+      "sha256": "e641f680f7050caa70c6dfec120999eb6b269aff6be0914cfcec7b2a0ebcdf4d",
+      "bytes": 13492,
+      "clips": []
+    },
+    {
+      "name": "bookshelf",
+      "id": "1Nk71nbt5Qbs57l5uuB0pNULrSsGwb_xR",
+      "pack": "ultimatehomeinterior",
+      "source": "https://quaternius.com/packs/ultimatehomeinterior.html",
+      "license": "CC0-1.0",
+      "sourceSha256": "6125bb56f3cb545d82498af9bc3f72d7b98a53b0360b327b99275ea0ce8c0bca",
+      "sha256": "896952eb720eff39f2509a4d62593a9367b021263e023cba896212443f2ef7fb",
+      "bytes": 7588,
+      "clips": []
+    },
+    {
+      "name": "bed",
+      "id": "1sgmwNraONKrnuJ8ApmjCaKABl05TK9nj",
+      "pack": "ultimatehomeinterior",
+      "source": "https://quaternius.com/packs/ultimatehomeinterior.html",
+      "license": "CC0-1.0",
+      "sourceSha256": "fc66e91a3f41c7a77b6a01b40a9c74408bb29cfdda1b9bc92593ec52882e211b",
+      "sha256": "7232f3ad5ac36aa89bb0bb9f8ea7b4dc782d10b4f16ac46d025cde207abf4f29",
+      "bytes": 20620,
+      "clips": []
+    },
+    {
+      "name": "table",
+      "id": "1zyKKmCElVXM4ihGDKW5RrarVz61C9KZ9",
+      "pack": "furniture",
+      "source": "https://quaternius.com/packs/furniture.html",
+      "license": "CC0-1.0",
+      "sourceSha256": "e8916517e89a992e7c4c729260c2b871af1bb3f9db4da944d99d61ddb0bc9437",
+      "sha256": "93b82261a8bd7e4e7678ae7671d5edd92594f60fbad73dc07b4cc532371c35b2",
+      "bytes": 8028,
+      "clips": []
+    },
+    {
+      "name": "chair",
+      "id": "1ukmJHryhpRbpm6uXhh5hpm4xXB9-Nbtv",
+      "pack": "furniture",
+      "source": "https://quaternius.com/packs/furniture.html",
+      "license": "CC0-1.0",
+      "sourceSha256": "7f6246d184a7824300e45eba99f035f265f3f5858e5cb53d95b99a3aff9d0d56",
+      "sha256": "84c0c4eb5059be1a41db4b77ada3424a182e2ef17f6bf57c3baf1b9e44289be8",
+      "bytes": 10492,
+      "clips": []
+    },
+    {
+      "name": "lamp",
+      "id": "1xcTHxSN8YaNudmYItDca-M2oh0Gl-Bu_",
+      "pack": "furniture",
+      "source": "https://quaternius.com/packs/furniture.html",
+      "license": "CC0-1.0",
+      "sourceSha256": "216a910f7847c04fd6826197f9aea97f4f295ea9a347f4f80da125fe39487568",
+      "sha256": "2f12d37e731ba1deec633e19eaf401323c0054433dedf4237f8ac6bce554e94e",
+      "bytes": 6716,
+      "clips": []
+    },
+    {
+      "name": "plant",
+      "id": "1UaqbxxMMiH4xQBcpOj4yapWHiPCf1lEV",
+      "pack": "furniture",
+      "source": "https://quaternius.com/packs/furniture.html",
+      "license": "CC0-1.0",
+      "sourceSha256": "f608a83ab67ba4cff051c773756e27268827e03bcb654d22f2d7ecde85529dab",
+      "sha256": "56907982219a935da6bab0b04b613e6340e39b53eebee5d09b16c9abf839af72",
+      "bytes": 15628,
+      "clips": []
+    },
+    {
+      "name": "coffee-table",
+      "id": "1-JR7XpiXjCh-rlHHjWYTEE457jBgmBDZ",
+      "pack": "furniture",
+      "source": "https://quaternius.com/packs/furniture.html",
+      "license": "CC0-1.0",
+      "sourceSha256": "97caa8ba9d1ddf7fade76714aa993adb95ae64df8817470ffe65354ba84f9cb1",
+      "sha256": "530d5abfe1b663cb1d5cb6f82b7d103c9bedf5cf1400621f4f02d342fde642e7",
+      "bytes": 8036,
+      "clips": []
+    }
+  ]
+}

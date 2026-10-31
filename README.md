@@ -1,5 +1,7 @@
 # INBOX EVIL: The Infected Inbox
 
+The current character and furniture pipeline uses locally bundled, CC0 Quaternius assets with authored skeletal clips. See [asset sources, license records, validation and remaining limitations](ASSET-INTEGRATION.md). Press **F3** in the game for the developer performance overlay.
+
 A desktop browser survival-horror game about restoring an infected **mock** inbox. Explore a procedural, six-room house, fight infected messages, solve organization puzzles, and inspect every simulated email change.
 
 **No Gmail integration, authentication, backend, or real email access.** All 220 messages are fictional. Gameplay and mailbox data stay in this browser's localStorage. No model is trained through play.
