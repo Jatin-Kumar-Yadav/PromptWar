@@ -12,12 +12,13 @@ const browser = await chromium.launch({
   ],
 });
 const page = await browser.newPage({ viewport: { width: 960, height: 640 } });
+const BASE=process.env.GAME_URL||'http://127.0.0.1:5173';
 const errors = [],
   external = [];
 page.on("pageerror", (error) => errors.push(error.message));
 page.on("request", (req) => {
   if (
-    !req.url().startsWith("http://127.0.0.1:5173") &&
+    !req.url().startsWith(BASE) &&
     !req.url().startsWith("blob:") &&
     !req.url().startsWith("data:")
   )
@@ -65,7 +66,7 @@ const pause = async () => {
   await page.waitForTimeout(100);
 };
 try {
-  await page.goto("http://127.0.0.1:5173");
+  await page.goto(BASE);
   await page.waitForTimeout(1600);
   await mkdir(".playwright", { recursive: true });
   await page.screenshot({ path: ".playwright/menu.png" });

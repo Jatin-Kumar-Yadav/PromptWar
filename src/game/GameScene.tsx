@@ -1,4 +1,4 @@
-import { memo, Suspense, useEffect, useRef } from "react";
+import { memo, Suspense, useEffect, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Text as DreiText } from "@react-three/drei";
 import type { ComponentProps } from "react";
@@ -21,6 +21,15 @@ import {
 } from "./world";
 import { sound } from "../utils/audio";
 import { advanceRun } from "./systems";
+import {
+  Actor,
+  Asset,
+  Batch,
+  Collectibles,
+  Mansion,
+  presentation,
+  surface,
+} from "./Art";
 const ZERO = new THREE.Vector2(0, 0);
 function Box({
   p,
@@ -41,14 +50,19 @@ function Box({
       receiveShadow={false}
     >
       <boxGeometry args={size} />
-      <meshStandardMaterial color={color} roughness={0.87} />
+      <meshStandardMaterial
+        color={color}
+        map={surface(size[1] > 2 ? "plaster" : "wood")}
+        roughness={0.87}
+      />
     </mesh>
   );
 }
 function House() {
   const keys = useGame((s) => s.run.keys);
   return (
-    <group>
+    <Batch>
+      <Mansion />
       {rooms.map((r, i) => (
         <group key={r.name}>
           <Box
@@ -74,7 +88,13 @@ function House() {
             {r.name.toUpperCase()}
           </Text>
           {i % 2 === 0 ? (
-            <pointLight position={[r.x, 2.9, r.z]} color="#b3c4c0" intensity={8} distance={10} decay={2} />
+            <pointLight
+              position={[r.x, 2.9, r.z]}
+              color="#b3c4c0"
+              intensity={8}
+              distance={10}
+              decay={2}
+            />
           ) : null}
           <mesh position={[r.x, 3.05, r.z]}>
             <cylinderGeometry args={[0.28, 0.4, 0.15, 8]} />
@@ -193,174 +213,39 @@ function House() {
         );
       })}
       {interactions.map((o) => (
-        <group key={o.id} position={[o.x, 1.25, o.z]}>
-          <mesh>
-            <octahedronGeometry args={[0.17]} />
-            <meshStandardMaterial
-              color="#c8ac64"
-              emissive="#baa15c"
-              emissiveIntensity={0.5}
-            />
-          </mesh>
-          <Text position={[0, 0.35, 0]} fontSize={0.13} color="#eddaa0">
-            {o.id === "note"
-              ? "NOTE"
-              : o.id === "digits"
-                ? "DIGITS"
-                : o.id.toUpperCase()}
-          </Text>
+        <group key={o.id} position={[o.x, 0, o.z]}>
+          {o.id==='note'||o.id==='digits'?<><mesh position={[0,1.03,0]} rotation={[-Math.PI/2,0,0]}><planeGeometry args={[.45,.3]}/><meshStandardMaterial color="#eee2ba" map={surface('paper')} side={THREE.DoubleSide}/></mesh><Text position={[0,1.04,0]} rotation={[-Math.PI/2,0,0]} fontSize={.065} color="#302e25">{o.id==='note'?'314':'1:7  2:2  3:6'}</Text></>:<><Asset name="cabinet"/>{['board','supply','exit'].includes(o.id)?<Box p={[0,1.2,0]} size={[.7,.45,.06]} color="#709d92" solid={false}/>:null}</>}
         </group>
       ))}
-    </group>
+    </Batch>
   );
 }
 function Creature({ enemy: e }: { enemy: Enemy }) {
-  const group = useRef<THREE.Group>(null);
-  const color = e.boss >= 0 ? bossConfigs[e.boss].color : "#75876b";
-  const scale = e.boss >= 0 ? 1.65 : 1;
-  useFrame(({ clock }) => {
-    if (group.current) {
-      const player = useGame.getState().run.position;
-      group.current.rotation.y = Math.atan2(player[0] - e.x, player[1] - e.z);
-      group.current.rotation.z =
-        e.hp <= 0 ? Math.PI / 2 : Math.sin(clock.elapsedTime * 4 + e.x) * 0.035;
-    }
-  });
+  const scale = e.boss >= 0 ? [1.65, 1.8, 1.65, 1.85][e.boss] : 1;
   return (
-    <group
-      ref={group}
-      position={[e.x, e.hp <= 0 ? 0.14 : 0, e.z]}
-      scale={scale}
-    >
-      <mesh
-        position={[0, 1, 0]}
-        userData={{ enemyId: e.id, part: "body" }}
-        castShadow
-      >
-        <capsuleGeometry args={[0.24, 0.52, 4, 8]} />
-        <meshStandardMaterial
-          color={e.windup > 0 ? "#d99858" : e.stun > 0 ? "#b6b69b" : color}
-        />
-      </mesh>
-      <mesh
-        position={[0, 1.58, 0]}
-        userData={{ enemyId: e.id, part: "head" }}
-        castShadow
-      >
-        <sphereGeometry args={[0.22, 10, 8]} />
-        <meshStandardMaterial color={color} />
-      </mesh>
-      {[-1, 1].map((i) => (
-        <group key={i}>
-          <Box
-            p={[i * 0.16, 0.35, 0]}
-            size={[0.19, 0.7, 0.22]}
-            color="#343b33"
-            solid={false}
-          />
-          <Box
-            p={[i * 0.4, 1.05, 0.18]}
-            size={[0.18, 0.65, 0.2]}
-            color={color}
-            solid={false}
-          />
-          <mesh position={[i * 0.095, 1.63, 0.188]}>
-            <boxGeometry args={[0.055, 0.035, 0.02]} />
-            <meshBasicMaterial color="#e1b575" />
-          </mesh>
-        </group>
-      ))}
-      {e.boss >= 0 && e.hp > 0 ? (
-        <Text
-          position={[0, 2.2, 0]}
-          fontSize={0.11}
-          color="#edd6b1"
-          maxWidth={2}
+    <>
+      <Actor id={e.id} />
+      <group position={[e.x, 0, e.z]} scale={scale}>
+        <mesh position={[0, 1, 0]} userData={{ enemyId: e.id, part: "body" }}>
+          <boxGeometry args={[0.55, 0.8, 0.4]} />
+          <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+        </mesh>
+        <mesh
+          position={[0, 1.65, 0]}
+          userData={{ enemyId: e.id, part: "head" }}
         >
-          {bossConfigs[e.boss].name}
-        </Text>
-      ) : null}
-    </group>
+          <sphereGeometry args={[0.23, 8, 6]} />
+          <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+        </mesh>
+      </group>
+    </>
   );
 }
 function Pickups() {
-  const collected = useGame((s) => s.run.collected);
-  const ref = useRef<THREE.Group>(null);
-  useFrame(({ clock }) => {
-    if (ref.current)
-      ref.current.children.forEach((child, i) => {
-        child.rotation.y = clock.elapsedTime + i;
-        child.position.y = 0.65 + Math.sin(clock.elapsedTime * 2 + i) * 0.1;
-      });
-  });
-  return (
-    <group ref={ref}>
-      {pickupDefs
-        .filter((p) => !collected.includes(p.id))
-        .map((p) => (
-          <group key={p.id} position={[p.x, 0.6, p.z]}>
-            {p.kind === "ammo" ? (
-              <Box
-                p={[0, 0, 0]}
-                size={[0.45, 0.3, 0.3]}
-                color="#c1a46a"
-                solid={false}
-              />
-            ) : (
-              <mesh>
-                <coneGeometry args={[0.23, 0.6, 5]} />
-                <meshStandardMaterial
-                  color="#9fc58a"
-                  emissive="#75a968"
-                  emissiveIntensity={0.7}
-                />
-              </mesh>
-            )}
-            <pointLight
-              color={p.kind === "ammo" ? "#e3bc7b" : "#a6d288"}
-              intensity={1.2}
-              distance={2}
-            />
-          </group>
-        ))}
-    </group>
-  );
+  return <Collectibles />;
 }
 function Player() {
-  const flash = useGame((s) => s.run.time - s.run.shotAt < 0.08);
-  const ref = useRef<THREE.Group>(null);
-  useFrame(() => {
-    const r = useGame.getState().run;
-    if (ref.current) {
-      ref.current.position.set(r.position[0], 0, r.position[1]);
-      ref.current.rotation.y = r.yaw;
-    }
-  });
-  return (
-    <group ref={ref}>
-      <mesh position={[0, 1.02, 0]}><capsuleGeometry args={[0.27, 0.62, 5, 10]} /><meshStandardMaterial color="#263b3b" /></mesh>
-      <mesh position={[0, 1.58, 0]}><sphereGeometry args={[0.2, 12, 10]} /><meshStandardMaterial color="#c3ad92" /></mesh>
-      <Box
-        p={[0, 1.5, -0.16]}
-        size={[0.31, 0.12, 0.06]}
-        color="#385b59"
-        solid={false}
-      />
-      {[-1, 1].map((i) => (
-        <group key={i}>
-          <mesh position={[i * 0.15, 0.4, 0]}><capsuleGeometry args={[0.08, 0.5, 4, 6]} /><meshStandardMaterial color="#252d2a" /></mesh>
-          <mesh position={[i * 0.35, 1.05, -0.1]} rotation={[0, 0, i * 0.12]}><capsuleGeometry args={[0.07, 0.42, 4, 6]} /><meshStandardMaterial color="#455c58" /></mesh>
-        </group>
-      ))}
-      <group position={[0.32, 1.18, -0.43]} rotation={[0.12, 0, 0]}><mesh><boxGeometry args={[0.13, 0.16, 0.48]} /><meshStandardMaterial color="#171b1a" metalness={0.7} roughness={0.3} /></mesh><mesh position={[0, -0.12, 0.09]}><boxGeometry args={[0.12, 0.22, 0.15]} /><meshStandardMaterial color="#303a38" /></mesh></group>
-      {flash ? (
-        <mesh position={[0.3, 1.16, -0.75]}>
-          <sphereGeometry args={[0.17, 6, 4]} />
-          <meshBasicMaterial color="#ffe3a1" />
-        </mesh>
-      ) : null}
-    </group>
-  );
+  return <Actor />;
 }
 function Controller() {
   const { camera, scene, gl } = useThree();
@@ -375,12 +260,14 @@ function Controller() {
   const ray = useRef(new THREE.Raycaster());
   const cameraRay = useRef(new THREE.Raycaster());
   const ready = useRef(false);
+  const vectors=useRef(Array.from({length:7},()=>new THREE.Vector3()));
   const occludersRef = useRef<THREE.Object3D[]>([]);
   const shotTargetsRef = useRef<THREE.Object3D[]>([]);
   const targetRefresh = useRef(0);
   useEffect(() => {
     const canvas = gl.domElement;
-    canvas.addEventListener("contextmenu", (e) => e.preventDefault());
+    const preventContext = (e: Event) => e.preventDefault();
+    canvas.addEventListener("contextmenu", preventContext);
     const onMove = (e: MouseEvent) => {
       if (
         useGame.getState().mode === "playing" &&
@@ -479,8 +366,10 @@ function Controller() {
           if (o.id === "note") {
             s.update({ note: true });
             s.notify("Sofa note: the drawer combination is 314.");
+            s.setPanel('note');document.exitPointerLock?.();
           } else if (o.id === "digits") {
             s.update({ digits: true });
+            s.setPanel('digits');document.exitPointerLock?.();
             s.notify("Drawer slips: first = 7 · second = 2 · third = 6");
           } else {
             s.setPanel(o.id);
@@ -491,7 +380,15 @@ function Controller() {
     };
     const up = (e: KeyboardEvent) => input.current.delete(e.code);
     const mouseDown = (e: MouseEvent) => {
-      if (e.button === 2) { aiming.current = true; return; }
+      if (
+        e.button === 2 &&
+        useGame.getState().mode === "playing" &&
+        document.pointerLockElement === canvas
+      ) {
+        aiming.current = true;
+        presentation.aiming = true;
+        return;
+      }
       if (
         e.button === 0 &&
         useGame.getState().mode === "playing" &&
@@ -500,7 +397,10 @@ function Controller() {
         firing.current = true;
     };
     const release = (e?: MouseEvent) => {
-      if (e?.button === 2) aiming.current = false;
+      if (e?.button === 2) {
+        aiming.current = false;
+        presentation.aiming = false;
+      }
       firing.current = false;
     };
     const blur = () => {
@@ -518,6 +418,8 @@ function Controller() {
     document.addEventListener("pointerlockchange", lock);
     const unsub = useGame.subscribe((s, prev) => {
       if (s.mode !== "playing") {
+        aiming.current = false;
+        presentation.aiming = false;
         input.current.clear();
         firing.current = false;
         if (document.pointerLockElement) document.exitPointerLock?.();
@@ -532,7 +434,7 @@ function Controller() {
       window.removeEventListener("keyup", up);
       window.removeEventListener("mousedown", mouseDown);
       window.removeEventListener("mouseup", release);
-      canvas.removeEventListener("contextmenu", (e) => e.preventDefault());
+      canvas.removeEventListener("contextmenu", preventContext);
       window.removeEventListener("blur", blur);
       document.removeEventListener("pointerlockchange", lock);
     };
@@ -556,21 +458,24 @@ function Controller() {
     }
     const occluders = occludersRef.current;
     const shotTargets = shotTargetsRef.current;
-    const target = new THREE.Vector3(r.position[0], 1.45, r.position[1]);
-    const forward = new THREE.Vector3(
+    const target = vectors.current[0].set(r.position[0], 1.45, r.position[1]);
+    const forward = vectors.current[1].set(
       -Math.sin(yaw.current) * Math.cos(pitch.current),
       -Math.sin(pitch.current),
       -Math.cos(yaw.current) * Math.cos(pitch.current),
     );
-    const shoulder = new THREE.Vector3(
+    const shoulder = vectors.current[2].set(
       Math.cos(yaw.current) * 0.48,
       0,
       -Math.sin(yaw.current) * 0.48,
     );
     const aimBlend = aiming.current ? 1 : 0;
     const cameraDistance = THREE.MathUtils.lerp(3.25, 2.1, aimBlend);
-    const desired = target.clone().addScaledVector(forward, -cameraDistance).addScaledVector(shoulder, 1 + aimBlend * 0.35);
-    const dir = desired.clone().sub(target);
+    const desired = vectors.current[3].copy(target)
+      .addScaledVector(forward, -cameraDistance)
+      .addScaledVector(shoulder, 1 + aimBlend * 0.35);
+    desired.y=Math.min(3.2,Math.max(.25,desired.y));
+    const dir = vectors.current[4].copy(desired).sub(target);
     const distance = dir.length();
     cameraRay.current.set(target, dir.normalize());
     const hit = cameraRay.current
@@ -585,7 +490,7 @@ function Controller() {
       ready.current = true;
     }
     camera.position.lerp(desired, 1 - Math.exp(-dt * 15));
-    const actualDirection = camera.position.clone().sub(target);
+    const actualDirection = vectors.current[5].copy(camera.position).sub(target);
     const actualDistance = actualDirection.length();
     cameraRay.current.set(target, actualDirection.normalize());
     const actualHit = cameraRay.current
@@ -598,12 +503,16 @@ function Controller() {
           actualDirection,
           Math.max(0.15, actualHit.distance - 0.15),
         );
-    const look = camera.position.clone().addScaledVector(forward, 10);
+    const look = vectors.current[6].copy(camera.position).addScaledVector(forward, 10);
     if (r.immune > 1.1 && s.mode === "playing")
       look.x += Math.sin(r.time * 60) * 0.025;
     camera.lookAt(look);
     const perspective = camera as THREE.PerspectiveCamera;
-    perspective.fov = THREE.MathUtils.lerp(perspective.fov, aiming.current ? 57 : 68, 1 - Math.exp(-dt * 10));
+    perspective.fov = THREE.MathUtils.lerp(
+      perspective.fov,
+      aiming.current ? 57 : 68,
+      1 - Math.exp(-dt * 10),
+    );
     perspective.updateProjectionMatrix();
     if (s.mode !== "playing") return;
     step.current += dt;
@@ -640,7 +549,12 @@ function Controller() {
       sound("damage", s.volume);
       return;
     }
-    if (firing.current && aiming.current && fireTimer.current <= 0 && reload === 0) {
+    if (
+      firing.current &&
+      aiming.current &&
+      fireTimer.current <= 0 &&
+      reload === 0
+    ) {
       fireTimer.current = 0.26;
       if (mag <= 0) {
         sound("empty", s.volume);
@@ -687,7 +601,18 @@ function Enemies() {
   return (
     <>
       {run.enemies
-        .filter((e) => e.hp > 0 && enemyActive(e, run))
+        .filter(
+          (e) =>
+            ((e.hp > 0 && enemyActive(e, run)) ||
+              (e.diedAt !== undefined && run.time - e.diedAt < 0.8)) &&
+            Math.hypot(e.x - run.position[0], e.z - run.position[1]) < 11,
+        )
+        .sort(
+          (a, b) =>
+            Math.hypot(a.x - run.position[0], a.z - run.position[1]) -
+            Math.hypot(b.x - run.position[0], b.z - run.position[1]),
+        )
+        .slice(0, 5)
         .map((e) => (
           <Creature key={e.id} enemy={e} />
         ))}
@@ -711,10 +636,16 @@ function World() {
   );
 }
 export const GameScene = memo(function GameScene() {
+  const [quality, setQuality] = useState(presentation.quality);
+  useEffect(() => {
+    const update = () => setQuality(presentation.quality);
+    window.addEventListener("graphics-quality", update);
+    return () => window.removeEventListener("graphics-quality", update);
+  }, []);
   return (
     <Canvas
       shadows={false}
-      dpr={[1, 1.25]}
+      dpr={quality === "low" ? 0.75 : quality === "high" ? 1.25 : 1}
       camera={{ fov: 66, near: 0.08, far: 55 }}
       gl={{ antialias: true, powerPreference: "high-performance" }}
       onCreated={({ gl }) => {

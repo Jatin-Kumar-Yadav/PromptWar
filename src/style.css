@@ -1,4 +1,5 @@
 @import "tailwindcss";
+.hud .vitals,.hud .objective,.hud .supplies,.hud .ammo{background:linear-gradient(90deg,#101710a0,transparent);border:0;padding:12px}.hud .vitals{width:155px}.hud .ammo strong{font-size:34px}.hud .objective{max-width:340px}.setting select{background:#28372c;color:#d5dbbb;padding:8px;border:1px solid #6b7b5c;margin-left:18px}
 :root {
   font-family:
     Inter,
