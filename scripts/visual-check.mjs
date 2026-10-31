@@ -19,6 +19,10 @@ try {
   await page.waitForTimeout(3000);
   await mkdir(".playwright", { recursive: true });
   await page.screenshot({ path: ".playwright/rebuild.png" });
+  await page.mouse.down({button:'right'});
+  await page.waitForTimeout(1600);
+  await page.screenshot({path:'.playwright/licensed-aim.png'});
+  await page.mouse.up({button:'right'});
   const measured = await page.evaluate(async () => {
     const frames = [];
     const start = performance.now();

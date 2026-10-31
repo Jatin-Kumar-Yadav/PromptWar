@@ -1,0 +1,2 @@
+# Preserve publisher license files verbatim, including their original CRLF formatting.
+public/assets/quaternius/*License.txt -whitespace
